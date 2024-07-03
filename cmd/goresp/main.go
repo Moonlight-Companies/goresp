@@ -9,7 +9,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/iceisfun/goresp/resp"
+	"github.com/Moonlight-Companies/goresp/resp"
 )
 
 func main() {

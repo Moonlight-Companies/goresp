@@ -1,4 +1,4 @@
-module github.com/iceisfun/goresp
+module github.com/Moonlight-Companies/goresp
 
 go 1.22.4
 

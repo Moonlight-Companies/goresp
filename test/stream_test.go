@@ -3,7 +3,7 @@ package decode
 import (
 	"testing"
 
-	"github.com/iceisfun/goresp/resp"
+	"github.com/Moonlight-Companies/goresp/resp"
 )
 
 func TestDecodeStream(t *testing.T) {

@@ -1,6 +1,10 @@
 package resp
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"strconv"
+)
 
 type RESPInteger struct {
 	Value int64
@@ -20,4 +24,11 @@ func (s *RESPInteger) Equal(other RESPValue) bool {
 		return false
 	}
 	return s.Value == otherInteger.Value
+}
+
+func (i *RESPInteger) Encode(buf *bytes.Buffer) error {
+	buf.WriteByte(':')
+	buf.WriteString(strconv.FormatInt(i.Value, 10))
+	buf.WriteString("\r\n")
+	return nil
 }

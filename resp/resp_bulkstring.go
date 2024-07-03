@@ -1,5 +1,10 @@
 package resp
 
+import (
+	"bytes"
+	"strconv"
+)
+
 type RESPBulkString struct {
 	Value []byte
 }
@@ -22,4 +27,13 @@ func (s *RESPBulkString) Equal(other RESPValue) bool {
 	}
 
 	return string(s.Value) == string(otherString.Value)
+}
+
+func (bs *RESPBulkString) Encode(buf *bytes.Buffer) error {
+	buf.WriteByte('$')
+	buf.WriteString(strconv.Itoa(len(bs.Value)))
+	buf.WriteString("\r\n")
+	buf.Write(bs.Value)
+	buf.WriteString("\r\n")
+	return nil
 }

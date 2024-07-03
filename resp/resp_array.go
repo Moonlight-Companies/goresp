@@ -1,6 +1,10 @@
 package resp
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"strconv"
+)
 
 type RESPArray struct {
 	Items []RESPValue
@@ -30,4 +34,16 @@ func (s *RESPArray) Equal(other RESPValue) bool {
 	}
 
 	return true
+}
+
+func (a *RESPArray) Encode(buf *bytes.Buffer) error {
+	buf.WriteByte('*')
+	buf.WriteString(strconv.Itoa(len(a.Items)))
+	buf.WriteString("\r\n")
+	for _, item := range a.Items {
+		if err := item.Encode(buf); err != nil {
+			return err
+		}
+	}
+	return nil
 }

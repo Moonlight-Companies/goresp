@@ -1,5 +1,7 @@
 package resp
 
+import "bytes"
+
 type RESPError struct {
 	Value string
 }
@@ -18,4 +20,11 @@ func (s *RESPError) Equal(other RESPValue) bool {
 		return false
 	}
 	return s.Value == otherError.Value
+}
+
+func (e *RESPError) Encode(buf *bytes.Buffer) error {
+	buf.WriteByte('-')
+	buf.WriteString(e.Value)
+	buf.WriteString("\r\n")
+	return nil
 }

@@ -1,5 +1,7 @@
 package resp
 
+import "bytes"
+
 type RESPSimpleString struct {
 	Value string
 }
@@ -18,4 +20,11 @@ func (s *RESPSimpleString) Equal(other RESPValue) bool {
 		return false
 	}
 	return s.Value == otherString.Value
+}
+
+func (ss *RESPSimpleString) Encode(buf *bytes.Buffer) error {
+	buf.WriteByte('+')
+	buf.WriteString(ss.Value)
+	buf.WriteString("\r\n")
+	return nil
 }

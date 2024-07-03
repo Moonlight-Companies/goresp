@@ -30,10 +30,15 @@ func (s *RESPBulkString) Equal(other RESPValue) bool {
 }
 
 func (bs *RESPBulkString) Encode(buf *bytes.Buffer) error {
-	buf.WriteByte('$')
-	buf.WriteString(strconv.Itoa(len(bs.Value)))
-	buf.WriteString("\r\n")
-	buf.Write(bs.Value)
-	buf.WriteString("\r\n")
+	buf.WriteByte(byte(BULK_STRING))
+	if bs.Value == nil {
+		buf.WriteString("-1")
+		buf.Write(PROTOCOL_SEPARATOR)
+	} else {
+		buf.WriteString(strconv.Itoa(len(bs.Value)))
+		buf.Write(PROTOCOL_SEPARATOR)
+		buf.Write(bs.Value)
+		buf.Write(PROTOCOL_SEPARATOR)
+	}
 	return nil
 }

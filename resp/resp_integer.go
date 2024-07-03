@@ -27,8 +27,8 @@ func (s *RESPInteger) Equal(other RESPValue) bool {
 }
 
 func (i *RESPInteger) Encode(buf *bytes.Buffer) error {
-	buf.WriteByte(':')
+	buf.WriteByte(byte(INTEGER))
 	buf.WriteString(strconv.FormatInt(i.Value, 10))
-	buf.WriteString("\r\n")
+	buf.Write(PROTOCOL_SEPARATOR)
 	return nil
 }

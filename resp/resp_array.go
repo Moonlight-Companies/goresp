@@ -37,9 +37,14 @@ func (s *RESPArray) Equal(other RESPValue) bool {
 }
 
 func (a *RESPArray) Encode(buf *bytes.Buffer) error {
-	buf.WriteByte('*')
+	buf.WriteByte(byte(ARRAY))
+	if a.Items == nil {
+		buf.WriteString("-1")
+		buf.Write(PROTOCOL_SEPARATOR)
+		return nil
+	}
 	buf.WriteString(strconv.Itoa(len(a.Items)))
-	buf.WriteString("\r\n")
+	buf.Write(PROTOCOL_SEPARATOR)
 	for _, item := range a.Items {
 		if err := item.Encode(buf); err != nil {
 			return err

@@ -71,7 +71,7 @@ func (p *Decode) parseValue(offset int) (RESPValue, int, error) {
 }
 
 func (p *Decode) findProtocolSeparator(offset int) (int, error) {
-	index := bytes.Index(p.buffer.Bytes()[offset:], []byte("\r\n"))
+	index := bytes.Index(p.buffer.Bytes()[offset:], PROTOCOL_SEPARATOR)
 	if index == -1 {
 		return 0, errIncompleteData
 	}

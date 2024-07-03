@@ -23,8 +23,8 @@ func (s *RESPSimpleString) Equal(other RESPValue) bool {
 }
 
 func (ss *RESPSimpleString) Encode(buf *bytes.Buffer) error {
-	buf.WriteByte('+')
+	buf.WriteByte(byte(SIMPLE_STRING))
 	buf.WriteString(ss.Value)
-	buf.WriteString("\r\n")
+	buf.Write(PROTOCOL_SEPARATOR)
 	return nil
 }

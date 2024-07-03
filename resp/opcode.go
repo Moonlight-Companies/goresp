@@ -9,3 +9,5 @@ const (
 	BULK_STRING   OPCODE = '$'
 	ARRAY         OPCODE = '*'
 )
+
+var PROTOCOL_SEPARATOR = []byte{'\r', '\n'}

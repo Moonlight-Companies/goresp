@@ -23,8 +23,8 @@ func (s *RESPError) Equal(other RESPValue) bool {
 }
 
 func (e *RESPError) Encode(buf *bytes.Buffer) error {
-	buf.WriteByte('-')
+	buf.WriteByte(byte(ERROR))
 	buf.WriteString(e.Value)
-	buf.WriteString("\r\n")
+	buf.Write(PROTOCOL_SEPARATOR)
 	return nil
 }

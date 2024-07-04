@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"strings"
 	"sync"
 	"time"
 )
@@ -43,10 +42,10 @@ type Reconnecting struct {
 	mutex          sync.Mutex
 	done           chan struct{}
 	data           chan []byte
-	commands       chan string
+	commands       chan []byte
 	reconnectDelay time.Duration
 	channels       sync.Map
-	Producer       chan BusMessage
+	Messages       chan BusMessage
 }
 
 func NewReconnecting(addr string) *Reconnecting {
@@ -57,8 +56,8 @@ func NewReconnecting(addr string) *Reconnecting {
 		done:           make(chan struct{}),
 		reconnectDelay: time.Second,
 		data:           make(chan []byte, 255),
-		commands:       make(chan string, 255),
-		Producer:       make(chan BusMessage, 255),
+		commands:       make(chan []byte, 255),
+		Messages:       make(chan BusMessage, 255),
 	}
 
 	go result.handleReconnect()
@@ -145,7 +144,7 @@ func (r *Reconnecting) punsubscribe(pattern string) {
 	r.Send(cmd)
 }
 
-func (r *Reconnecting) Send(cmd string) {
+func (r *Reconnecting) Send(cmd []byte) {
 	select {
 	case r.commands <- cmd:
 		r.logger.Debug("Sent command: %s", cmd)
@@ -379,18 +378,9 @@ func (r *Reconnecting) parse() error {
 		}
 
 		select {
-		case r.Producer <- busMessage:
+		case r.Messages <- busMessage:
 		default:
-			r.logger.Warn("Producer queue full, dropping message. Queue length: %d", len(r.Producer))
+			r.logger.Warn("Producer queue full, dropping message. Queue length: %d", len(r.Messages))
 		}
 	}
-}
-
-func FormatCommand(args ...string) string {
-	buffer := strings.Builder{}
-	buffer.WriteString(fmt.Sprintf("*%d\r\n", len(args)))
-	for _, arg := range args {
-		buffer.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(arg), arg))
-	}
-	return buffer.String()
 }

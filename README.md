@@ -1,10 +1,11 @@
 # GoRESP: RESP (Redis Serialization Protocol) Implementation in Go
 
-GoRESP is an implementation of the Redis Serialization Protocol (RESP) in Go, with a focus on providing a non-blocking stream of events from Redis pubsub channels. It offers a solution for encoding and decoding RESP data streams, along with a PubSub connector featuring auto-reconnection capabilities.
+GoRESP is an implementation of the Redis Serialization Protocol (RESP) with a focus on providing a non-blocking stream of events from Redis pubsub channels. It offers a solution for encoding and decoding RESP data streams, along with a PubSub connector featuring auto-reconnection capabilities.
 
 ## Features
 
-- RESP protocol support (Simple Strings, Errors, Integers, Bulk Strings, Arrays)
+- RESP protocol support for types encountered during pubsub (Simple Strings, Errors, Integers, Bulk Strings, Arrays)
+- Does not support opcodes that are non pub sub related
 - Streaming decoder for processing data streams
 - Error handling and recovery
 - PubSub connector with automatic reconnection and resubscription

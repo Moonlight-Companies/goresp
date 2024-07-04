@@ -2,11 +2,7 @@ package resp
 
 import (
 	"bytes"
-	"errors"
 )
-
-var errIncompleteData = errors.New("incomplete data")
-var errUnrecoverableProtocol = errors.New("unrecoverable protocol error")
 
 type RESPValue interface {
 	Type() string
@@ -16,9 +12,9 @@ type RESPValue interface {
 	Encode(buf *bytes.Buffer) error
 }
 
-func DecodeValue(buf *bytes.Buffer, start int) (RESPValue, int, error) {
+func decodeValue(buf *bytes.Buffer, start int) (RESPValue, int, error) {
 	if buf.Len() == 0 {
-		return nil, 0, nil
+		return nil, 0, errIncompleteData
 	}
 
 	if start >= buf.Len() {
@@ -47,6 +43,24 @@ func DecodeValue(buf *bytes.Buffer, start int) (RESPValue, int, error) {
 		n, err := e.Decode(buf, start)
 		return e, n, err
 	default:
-		return nil, 0, errors.New("invalid opcode")
+		return nil, 0, errInvalidOpcode
 	}
+}
+
+func DecodeValue(buf *bytes.Buffer, start int) (RESPValue, int, error) {
+	v, consume, err := decodeValue(buf, start)
+	if err != nil {
+		// we return nil, 0, nil when we are at the top
+		if start == 0 && err == errIncompleteData {
+			return nil, 0, nil
+		}
+
+		return nil, 0, err
+	}
+
+	if consume == 0 {
+		return nil, 0, nil
+	}
+
+	return v, consume, nil
 }

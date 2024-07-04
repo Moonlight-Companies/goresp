@@ -32,7 +32,11 @@ func (e *RESPError) Encode(buf *bytes.Buffer) error {
 }
 
 func (e *RESPError) Decode(buf *bytes.Buffer, start int) (int, error) {
-	if start >= buf.Len() || buf.Bytes()[start] != byte(ERROR) {
+	if buf.Len() <= start {
+		return 0, errIncompleteData
+	}
+
+	if buf.Bytes()[start] != byte(ERROR) {
 		return 0, errUnrecoverableProtocol
 	}
 

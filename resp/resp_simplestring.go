@@ -32,7 +32,11 @@ func (ss *RESPSimpleString) Encode(buf *bytes.Buffer) error {
 }
 
 func (ss *RESPSimpleString) Decode(buf *bytes.Buffer, start int) (int, error) {
-	if start >= buf.Len() || buf.Bytes()[start] != byte(SIMPLE_STRING) {
+	if buf.Len() <= start {
+		return 0, errIncompleteData
+	}
+
+	if buf.Bytes()[start] != byte(SIMPLE_STRING) {
 		return 0, errUnrecoverableProtocol
 	}
 

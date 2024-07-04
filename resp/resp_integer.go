@@ -34,7 +34,11 @@ func (i *RESPInteger) Encode(buf *bytes.Buffer) error {
 }
 
 func (i *RESPInteger) Decode(buf *bytes.Buffer, start int) (int, error) {
-	if start >= buf.Len() || buf.Bytes()[start] != byte(INTEGER) {
+	if buf.Len() <= start {
+		return 0, errIncompleteData
+	}
+
+	if buf.Bytes()[start] != byte(INTEGER) {
 		return 0, errUnrecoverableProtocol
 	}
 

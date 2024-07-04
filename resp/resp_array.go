@@ -54,7 +54,11 @@ func (a *RESPArray) Encode(buf *bytes.Buffer) error {
 }
 
 func (a *RESPArray) Decode(buf *bytes.Buffer, start int) (int, error) {
-	if start >= buf.Len() || buf.Bytes()[start] != byte(ARRAY) {
+	if buf.Len() <= start {
+		return 0, errIncompleteData
+	}
+
+	if buf.Bytes()[start] != byte(ARRAY) {
 		return 0, errUnrecoverableProtocol
 	}
 
@@ -82,6 +86,9 @@ func (a *RESPArray) Decode(buf *bytes.Buffer, start int) (int, error) {
 		value, n, err := DecodeValue(buf, start+consumed)
 		if err != nil {
 			return 0, err
+		}
+		if n == 0 {
+			return 0, errIncompleteData
 		}
 		a.Items = append(a.Items, value)
 		consumed += n

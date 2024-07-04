@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net"
@@ -17,19 +16,6 @@ const (
 	healthCheckInterval = 5 * time.Second
 	maxReconnectDelay   = 30 * time.Second
 )
-
-type BusMessage struct {
-	Channel string
-	Data    []byte
-	Pattern string
-}
-
-func (m *BusMessage) IntoMap() (output map[string]interface{}, err error) {
-	if err = json.Unmarshal(m.Data, &output); err != nil {
-		return nil, err
-	}
-	return output, nil
-}
 
 type ReconnectingChannel struct {
 	Channel string
@@ -302,90 +288,12 @@ func (r *Reconnecting) parse() error {
 			return nil
 		}
 
-		array, ok := value.(*resp.RESPArray)
+		message, ok := ParseMessage(value)
 		if !ok {
-			r.logger.Debug("Received non-array value: %s, ignoring %v", value.Type(), value)
 			continue
 		}
 
-		if len(array.Items) > 0 {
-			messageType, ok := array.Items[0].(*resp.RESPBulkString)
-			if !ok {
-				continue
-			}
-
-			switch messageType.String() {
-			case "pong":
-				continue
-			}
-		}
-
-		if len(array.Items) < 3 {
-			continue
-		}
-
-		messageType, ok := array.Items[0].(*resp.RESPBulkString)
-		if !ok {
-			r.logger.Warn("Invalid message type, ignoring")
-			continue
-		}
-
-		var busMessage BusMessage
-
-		switch messageType.String() {
-		case "message":
-			if len(array.Items) != 3 {
-				r.logger.Warn("Invalid MESSAGE format, ignoring")
-				continue
-			}
-			channel, ok := array.Items[1].(*resp.RESPBulkString)
-			if !ok {
-				r.logger.Warn("Invalid channel format, ignoring")
-				continue
-			}
-			data, ok := array.Items[2].(*resp.RESPBulkString)
-			if !ok {
-				r.logger.Warn("Invalid data format, ignoring")
-				continue
-			}
-			busMessage = BusMessage{
-				Channel: channel.String(),
-				Data:    []byte(data.String()),
-			}
-		case "pmessage":
-			if len(array.Items) != 4 {
-				r.logger.Warn("Invalid PMESSAGE format, ignoring")
-				continue
-			}
-			pattern, ok := array.Items[1].(*resp.RESPBulkString)
-			if !ok {
-				r.logger.Warn("Invalid pattern format, ignoring")
-				continue
-			}
-			channel, ok := array.Items[2].(*resp.RESPBulkString)
-			if !ok {
-				r.logger.Warn("Invalid channel format, ignoring")
-				continue
-			}
-			data, ok := array.Items[3].(*resp.RESPBulkString)
-			if !ok {
-				r.logger.Warn("Invalid data format, ignoring")
-				continue
-			}
-			busMessage = BusMessage{
-				Channel: channel.String(),
-				Data:    []byte(data.String()),
-				Pattern: pattern.String(),
-			}
-		default:
-			continue
-		}
-
-		select {
-		case r.Messages <- busMessage:
-		default:
-			r.logger.Warn("Producer queue full, dropping message. Queue length: %d", len(r.Messages))
-		}
+		r.Messages <- *message
 	}
 }
 

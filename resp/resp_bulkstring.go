@@ -26,7 +26,18 @@ func (s *RESPBulkString) Equal(other RESPValue) bool {
 		return false
 	}
 
-	return string(s.Value) == string(otherString.Value)
+	// If both are nil, they're equal
+	if s.Value == nil && otherString.Value == nil {
+		return true
+	}
+
+	// If only one is nil, they're not equal
+	if (s.Value == nil) != (otherString.Value == nil) {
+		return false
+	}
+
+	// Both are non-nil, compare contents
+	return bytes.Equal(s.Value, otherString.Value)
 }
 
 func (bs *RESPBulkString) Encode(buf *bytes.Buffer) error {

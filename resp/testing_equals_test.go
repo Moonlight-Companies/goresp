@@ -6,6 +6,21 @@ import (
 	"github.com/Moonlight-Companies/goresp/resp"
 )
 
+func generateRESPValues() []resp.RESPValue {
+	return []resp.RESPValue{
+		&resp.RESPSimpleString{Value: "SimpleString"},
+		&resp.RESPError{Value: "Error"},
+		&resp.RESPInteger{Value: 42},
+		&resp.RESPBulkString{Value: []byte("BulkString")},
+		&resp.RESPBulkString{Value: nil}, // Null BulkString
+		&resp.RESPArray{Items: []resp.RESPValue{
+			&resp.RESPSimpleString{Value: "ArrayItem"},
+			&resp.RESPInteger{Value: 1},
+		}},
+		&resp.RESPArray{Items: nil}, // Null Array
+	}
+}
+
 func TestRESPValueEquals(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -58,6 +73,18 @@ func TestRESPValueEquals(t *testing.T) {
 			}},
 			false,
 		},
+		{
+			"Empty arrays",
+			&resp.RESPArray{Items: []resp.RESPValue{}},
+			&resp.RESPArray{Items: []resp.RESPValue{}},
+			true,
+		},
+		{
+			"BulkString Not Equal",
+			&resp.RESPBulkString{Value: []byte("hello")},
+			&resp.RESPInteger{Value: 42},
+			false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -93,5 +120,29 @@ func TestRESPValueEqualsSelf(t *testing.T) {
 				t.Errorf("%v is not equal to itself", v)
 			}
 		})
+	}
+}
+
+func TestRESPValueEqualsDifferentTypes(t *testing.T) {
+	values := generateRESPValues()
+
+	for i, v1 := range values {
+		for j, v2 := range values {
+			t.Run(v1.Type()+"_vs_"+v2.Type(), func(t *testing.T) {
+				result := v1.Equal(v2)
+				expected := i == j // Only equal if it's the same item
+
+				if result != expected {
+					t.Errorf("%v.Equal(%v) = %v, want %v", v1, v2, result, expected)
+				}
+
+				// Test symmetry
+				reverseResult := v2.Equal(v1)
+				if reverseResult != result {
+					t.Errorf("Equality is not symmetric: %v.Equal(%v) = %v, but %v.Equal(%v) = %v",
+						v1, v2, result, v2, v1, reverseResult)
+				}
+			})
+		}
 	}
 }

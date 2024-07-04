@@ -10,50 +10,51 @@ import (
 	// "syscall"
 
 	"flag"
-	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	"github.com/Moonlight-Companies/goresp/resp"
+	"github.com/Moonlight-Companies/goresp/connection"
+	"github.com/Moonlight-Companies/goresp/logging"
 )
 
 func main() {
+	log := logging.NewLogger(logging.LogLevelInfo)
+
 	redisAddr := flag.String("redis", "bus:6379", "Redis server address")
 	channelsFlag := flag.String("channels", "*", "Comma-separated list of channels to subscribe to")
 	flag.Parse()
 
 	channels := strings.Split(*channelsFlag, ",")
 
-	reconn := resp.NewReconnecting(*redisAddr)
+	reconn := connection.NewReconnecting(*redisAddr)
 
 	for _, channel := range channels {
 		channel = strings.TrimSpace(channel)
 		if strings.Contains(channel, "*") {
 			reconn.PSubscribe(channel)
-			fmt.Printf("PSubscribed to channel: %s\n", channel)
+			log.Infoln("PSubscribed to channel", channel)
 		} else {
 			reconn.Subscribe(channel)
-			fmt.Printf("Subscribed to channel: %s\n", channel)
+			log.Infoln("Subscribed to channel", channel)
 		}
 	}
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	fmt.Printf("Connected to Redis at %s\n", *redisAddr)
-	fmt.Println("Waiting for messages. Press Ctrl+C to exit.")
+	log.Infoln("Connected to Redis at %s\n", *redisAddr)
+	log.Infoln("Waiting for messages. Press Ctrl+C to exit.")
 
 	go func() {
 		for msg := range reconn.Messages {
 			temp, err := msg.IntoMap()
 			if err != nil {
-				log.Printf("Error parsing message: %v", err)
+				log.Errorln("Error parsing message", err)
 				continue
 			}
-			fmt.Printf("Channel: %s, Pattern: %s, Message: %v\n", msg.Channel, msg.Pattern, temp)
+			log.Info("Channel: %s, Pattern: %s, Message: %v\n", msg.Channel, msg.Pattern, temp)
 		}
 	}()
 
@@ -61,7 +62,7 @@ func main() {
 	<-shutdown
 
 	// Perform cleanup
-	fmt.Println("\nShutting down...")
+	log.Infoln("\nShutting down...")
 	reconn.Close()
-	fmt.Println("Goodbye!")
+	log.Infoln("Goodbye!")
 }

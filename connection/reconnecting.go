@@ -1,4 +1,4 @@
-package resp
+package connection
 
 import (
 	"encoding/json"
@@ -7,6 +7,10 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/Moonlight-Companies/goresp/command"
+	"github.com/Moonlight-Companies/goresp/logging"
+	"github.com/Moonlight-Companies/goresp/resp"
 )
 
 const (
@@ -33,10 +37,10 @@ type ReconnectingChannel struct {
 }
 
 type Reconnecting struct {
-	logger         *Logger
+	logger         *logging.Logger
 	addr           string
 	conn           net.Conn
-	decoder        *Decode
+	decoder        *resp.Decode
 	lastData       time.Time
 	connected      bool
 	mutex          sync.Mutex
@@ -50,9 +54,9 @@ type Reconnecting struct {
 
 func NewReconnecting(addr string) *Reconnecting {
 	result := &Reconnecting{
-		logger:         NewLogger(LogLevelInfo),
+		logger:         logging.NewLogger(logging.LogLevelInfo),
 		addr:           addr,
-		decoder:        &Decode{},
+		decoder:        &resp.Decode{},
 		done:           make(chan struct{}),
 		reconnectDelay: time.Second,
 		data:           make(chan []byte, 255),
@@ -74,7 +78,7 @@ func (r *Reconnecting) Close() {
 }
 
 func (r *Reconnecting) onConnect() {
-	r.Send(FormatCommand("PING"))
+	r.Send(command.FormatCommand("PING"))
 
 	r.channels.Range(func(key, value interface{}) bool {
 		channelItem := value.(ReconnectingChannel)
@@ -101,7 +105,7 @@ func (r *Reconnecting) Subscribe(channels ...string) {
 }
 
 func (r *Reconnecting) subscribe(channel string) {
-	cmd := FormatCommand("SUBSCRIBE", channel)
+	cmd := command.FormatCommand("SUBSCRIBE", channel)
 	r.Send(cmd)
 }
 
@@ -114,7 +118,7 @@ func (r *Reconnecting) PSubscribe(patterns ...string) {
 }
 
 func (r *Reconnecting) psubscribe(pattern string) {
-	cmd := FormatCommand("PSUBSCRIBE", pattern)
+	cmd := command.FormatCommand("PSUBSCRIBE", pattern)
 	r.Send(cmd)
 }
 
@@ -127,7 +131,7 @@ func (r *Reconnecting) Unsubscribe(channels ...string) {
 }
 
 func (r *Reconnecting) unsubscribe(channel string) {
-	cmd := FormatCommand("UNSUBSCRIBE", channel)
+	cmd := command.FormatCommand("UNSUBSCRIBE", channel)
 	r.Send(cmd)
 }
 
@@ -140,7 +144,7 @@ func (r *Reconnecting) PUnsubscribe(patterns ...string) {
 }
 
 func (r *Reconnecting) punsubscribe(pattern string) {
-	cmd := FormatCommand("PUNSUBSCRIBE", pattern)
+	cmd := command.FormatCommand("PUNSUBSCRIBE", pattern)
 	r.Send(cmd)
 }
 
@@ -200,7 +204,7 @@ func (r *Reconnecting) healthCheck() {
 
 	if time.Since(r.lastData) > healthCheckInterval {
 		randomString := fmt.Sprintf("%d", rand.Int())
-		pingCmd := FormatCommand("PING", randomString)
+		pingCmd := command.FormatCommand("PING", randomString)
 		r.Send(pingCmd)
 	}
 }
@@ -298,14 +302,14 @@ func (r *Reconnecting) parse() error {
 			return nil
 		}
 
-		array, ok := value.(*RESPArray)
+		array, ok := value.(*resp.RESPArray)
 		if !ok {
 			r.logger.Debug("Received non-array value: %s, ignoring %v", value.Type(), value)
 			continue
 		}
 
 		if len(array.Items) > 0 {
-			messageType, ok := array.Items[0].(*RESPBulkString)
+			messageType, ok := array.Items[0].(*resp.RESPBulkString)
 			if !ok {
 				continue
 			}
@@ -320,7 +324,7 @@ func (r *Reconnecting) parse() error {
 			continue
 		}
 
-		messageType, ok := array.Items[0].(*RESPBulkString)
+		messageType, ok := array.Items[0].(*resp.RESPBulkString)
 		if !ok {
 			r.logger.Warn("Invalid message type, ignoring")
 			continue
@@ -334,12 +338,12 @@ func (r *Reconnecting) parse() error {
 				r.logger.Warn("Invalid MESSAGE format, ignoring")
 				continue
 			}
-			channel, ok := array.Items[1].(*RESPBulkString)
+			channel, ok := array.Items[1].(*resp.RESPBulkString)
 			if !ok {
 				r.logger.Warn("Invalid channel format, ignoring")
 				continue
 			}
-			data, ok := array.Items[2].(*RESPBulkString)
+			data, ok := array.Items[2].(*resp.RESPBulkString)
 			if !ok {
 				r.logger.Warn("Invalid data format, ignoring")
 				continue
@@ -353,17 +357,17 @@ func (r *Reconnecting) parse() error {
 				r.logger.Warn("Invalid PMESSAGE format, ignoring")
 				continue
 			}
-			pattern, ok := array.Items[1].(*RESPBulkString)
+			pattern, ok := array.Items[1].(*resp.RESPBulkString)
 			if !ok {
 				r.logger.Warn("Invalid pattern format, ignoring")
 				continue
 			}
-			channel, ok := array.Items[2].(*RESPBulkString)
+			channel, ok := array.Items[2].(*resp.RESPBulkString)
 			if !ok {
 				r.logger.Warn("Invalid channel format, ignoring")
 				continue
 			}
-			data, ok := array.Items[3].(*RESPBulkString)
+			data, ok := array.Items[3].(*resp.RESPBulkString)
 			if !ok {
 				r.logger.Warn("Invalid data format, ignoring")
 				continue

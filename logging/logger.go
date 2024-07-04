@@ -1,9 +1,10 @@
-package resp
+package logging
 
 import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 const (
@@ -27,7 +28,7 @@ func NewLogger(level int) *Logger {
 	}
 }
 
-// Log methods
+// Log methods with formatting
 func (l *Logger) Debug(format string, v ...interface{}) {
 	if l.level <= LogLevelDebug {
 		l.log("DEBUG", format, v...)
@@ -52,6 +53,39 @@ func (l *Logger) Error(format string, v ...interface{}) {
 	}
 }
 
+// Log methods without formatting (Println-like behavior)
+func (l *Logger) Debugln(v ...interface{}) {
+	if l.level <= LogLevelDebug {
+		l.logln("DEBUG", v...)
+	}
+}
+
+func (l *Logger) Infoln(v ...interface{}) {
+	if l.level <= LogLevelInfo {
+		l.logln("INFO", v...)
+	}
+}
+
+func (l *Logger) Warnln(v ...interface{}) {
+	if l.level <= LogLevelWarn {
+		l.logln("WARN", v...)
+	}
+}
+
+func (l *Logger) Errorln(v ...interface{}) {
+	if l.level <= LogLevelError {
+		l.logln("ERROR", v...)
+	}
+}
+
 func (l *Logger) log(level, format string, v ...interface{}) {
 	l.logger.Printf("%s: %s", level, fmt.Sprintf(format, v...))
+}
+
+func (l *Logger) logln(level string, v ...interface{}) {
+	args := make([]string, len(v))
+	for i, arg := range v {
+		args[i] = fmt.Sprint(arg)
+	}
+	l.logger.Printf("%s: %s", level, strings.Join(args, " "))
 }

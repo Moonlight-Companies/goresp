@@ -1,8 +1,6 @@
-package decode
+package resp_test
 
-import (
-	"github.com/Moonlight-Companies/goresp/resp"
-)
+import "github.com/Moonlight-Companies/goresp/resp"
 
 type TestCase struct {
 	Name          string

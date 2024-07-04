@@ -1,4 +1,4 @@
-package decode
+package resp_test
 
 import (
 	"bytes"

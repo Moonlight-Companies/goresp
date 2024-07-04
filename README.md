@@ -81,7 +81,7 @@ fmt.Printf("Encoded SUBSCRIBE command: %q\n", subCmd)
 ### PubSub Connector (Non-blocking Event Stream)
 
 ```go
-reconn := resp.NewReconnecting("127.0.0.1:6379")
+reconn := connection.NewReconnecting("127.0.0.1:6379")
 reconn.Subscribe("chan")
 
 go func() {

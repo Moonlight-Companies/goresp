@@ -1,17 +1,19 @@
-package resp
+package command
 
 import (
 	"bytes"
 	"io"
+
+	"github.com/Moonlight-Companies/goresp/resp"
 )
 
 func FormatCommandWriter(w io.Writer, args ...string) error {
-	commandArray := &RESPArray{
-		Items: make([]RESPValue, len(args)),
+	commandArray := &resp.RESPArray{
+		Items: make([]resp.RESPValue, len(args)),
 	}
 
 	for i, arg := range args {
-		commandArray.Items[i] = &RESPBulkString{Value: []byte(arg)}
+		commandArray.Items[i] = &resp.RESPBulkString{Value: []byte(arg)}
 	}
 
 	buf := &bytes.Buffer{}

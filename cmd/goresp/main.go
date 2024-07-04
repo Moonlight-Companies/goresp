@@ -44,7 +44,7 @@ func main() {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	log.Infoln("Connected to Redis at %s\n", *redisAddr)
+	log.Infoln("Connected to Redis", *redisAddr)
 	log.Infoln("Waiting for messages. Press Ctrl+C to exit.")
 
 	go func() {
@@ -62,7 +62,7 @@ func main() {
 	<-shutdown
 
 	// Perform cleanup
-	log.Infoln("\nShutting down...")
+	log.Infoln("Calling .Close...")
 	reconn.Close()
-	log.Infoln("Goodbye!")
+	log.Infoln("Done!")
 }

@@ -1,25 +1,25 @@
-# GoRESP: Robust RESP (Redis Serialization Protocol) Implementation in Go
+# GoRESP: RESP (Redis Serialization Protocol) Implementation in Go
 
-GoRESP is a comprehensive implementation of the Redis Serialization Protocol (RESP) in Go. It offers a flexible and robust solution for encoding and decoding RESP data streams, along with a PubSub connector featuring auto-reconnection capabilities.
+GoRESP is an implementation of the Redis Serialization Protocol (RESP) in Go, with a focus on providing a non-blocking stream of events from Redis pubsub channels. It offers a solution for encoding and decoding RESP data streams, along with a PubSub connector featuring auto-reconnection capabilities.
 
 ## Features
 
-- Full RESP protocol support (Simple Strings, Errors, Integers, Bulk Strings, Arrays)
-- Efficient streaming decoder for processing large data streams
-- Comprehensive error handling and recovery
+- RESP protocol support (Simple Strings, Errors, Integers, Bulk Strings, Arrays)
+- Streaming decoder for processing data streams
+- Error handling and recovery
 - PubSub connector with automatic reconnection and resubscription
 - Health checks to handle silent stream stoppages (no syscall errors)
-- Extensible design allowing custom connection implementations for encoding and decoding
+- Non-blocking event stream for consuming pubsub messages
 
 ## Components
 
 ### RESP Decoder
 
-The core of GoRESP is a high-performance RESP decoder capable of handling both complete messages and partial streams:
+The core of GoRESP is a streaming RESP decoder capable of handling both complete messages and partial streams:
 
 - Processes data from byte-by-byte to large chunk partial messages
 - Supports all RESP data types
-- Robust error handling for malformed input
+- Handles malformed input
 - Resumes parsing from incomplete data
 
 ### PubSub Connector (`NewReconnecting`)
@@ -29,7 +29,7 @@ Provides a high-level interface for subscribing to Redis channels:
 - Automatic connection management
 - Resubscription to channels after reconnection
 - Configurable health checks for detecting message inactivity
-- Channel for receiving published messages in a usable format, ignoring non-pubsub messages like ping responses
+- Non-blocking channel for receiving published messages, ignoring non-pubsub messages
 
 ## Usage
 
@@ -70,7 +70,7 @@ buf := bytes.Buffer{}
 respSimpleString.Encode(&buf) // encode appending to the buf
 ```
 
-## Formatting Redis Commands
+### Formatting Redis Commands
 
 ```go
 // Format a simple SUBSCRIBE command
@@ -78,16 +78,21 @@ subCmd := resp.FormatCommand("SUBSCRIBE", "chan")
 fmt.Printf("Encoded SUBSCRIBE command: %q\n", subCmd)
 ```
 
-### PubSub Connector
+### PubSub Connector (Non-blocking Event Stream)
 
 ```go
 reconn := resp.NewReconnecting("127.0.0.1:6379")
 reconn.Subscribe("chan")
 
-for msg := range reconn.Messages {
-    fmt.Println(msg.Channel, msg.Pattern, len(msg.Data))
-    temp, err := msg.IntoMap()
-}
+go func() {
+    for msg := range reconn.Messages {
+        fmt.Println(msg.Channel, msg.Pattern, len(msg.Data))
+        temp, err := msg.IntoMap()
+        // Process message asynchronously
+    }
+}()
+
+// Your main application logic continues here...
 ```
 
 ## Customization
@@ -112,21 +117,15 @@ for {
 }
 ```
 
-## Performance
-
-GoRESP is optimized for performance, processing data byte-by-byte to minimize memory allocations and enable efficient streaming of large datasets.
-
 ## Testing
 
-The comprehensive test suite includes:
+The test suite includes:
 
-- Unit tests for all RESP data types
-- Streaming decode tests for large messages broken across multiple reads
+- Unit tests for RESP data types
+- Streaming decode tests for messages broken across multiple reads
 - Error handling and recovery tests
-- Permutation tests for thorough protocol compliance checking
-- Failure tests for unrecoverable conditions:
-  1. Failed integer parsing where expected
-  2. Invalid opcode
+- Permutation tests for protocol compliance checking
+- Failure tests for unrecoverable conditions
 
 Run tests with:
 
@@ -155,7 +154,3 @@ This allows testing of health check mechanisms and ensuring we discard partial s
 ## Contributing
 
 Contributions are welcome! Please submit a Pull Request or open an Issue for discussion.
-
-## License
-
-[MIT License](LICENSE)

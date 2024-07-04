@@ -1,6 +1,8 @@
 package resp
 
-import "bytes"
+import (
+	"bytes"
+)
 
 type RESPError struct {
 	Value string
@@ -27,4 +29,18 @@ func (e *RESPError) Encode(buf *bytes.Buffer) error {
 	buf.WriteString(e.Value)
 	buf.Write(PROTOCOL_SEPARATOR)
 	return nil
+}
+
+func (e *RESPError) Decode(buf *bytes.Buffer, start int) (int, error) {
+	if start >= buf.Len() || buf.Bytes()[start] != byte(ERROR) {
+		return 0, errUnrecoverableProtocol
+	}
+
+	end := bytes.Index(buf.Bytes()[start:], PROTOCOL_SEPARATOR)
+	if end == -1 {
+		return 0, errIncompleteData
+	}
+
+	e.Value = string(buf.Bytes()[start+1 : start+end])
+	return end + len(PROTOCOL_SEPARATOR), nil
 }

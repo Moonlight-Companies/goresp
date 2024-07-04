@@ -1,6 +1,8 @@
 package resp
 
-import "bytes"
+import (
+	"bytes"
+)
 
 type RESPSimpleString struct {
 	Value string
@@ -27,4 +29,18 @@ func (ss *RESPSimpleString) Encode(buf *bytes.Buffer) error {
 	buf.WriteString(ss.Value)
 	buf.Write(PROTOCOL_SEPARATOR)
 	return nil
+}
+
+func (ss *RESPSimpleString) Decode(buf *bytes.Buffer, start int) (int, error) {
+	if start >= buf.Len() || buf.Bytes()[start] != byte(SIMPLE_STRING) {
+		return 0, errUnrecoverableProtocol
+	}
+
+	end := bytes.Index(buf.Bytes()[start:], PROTOCOL_SEPARATOR)
+	if end == -1 {
+		return 0, errIncompleteData
+	}
+
+	ss.Value = string(buf.Bytes()[start+1 : start+end])
+	return end + len(PROTOCOL_SEPARATOR), nil
 }

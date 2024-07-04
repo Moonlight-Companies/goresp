@@ -42,3 +42,36 @@ func (bs *RESPBulkString) Encode(buf *bytes.Buffer) error {
 	}
 	return nil
 }
+
+func (bs *RESPBulkString) Decode(buf *bytes.Buffer, start int) (int, error) {
+	if start >= buf.Len() || buf.Bytes()[start] != byte(BULK_STRING) {
+		return 0, errUnrecoverableProtocol
+	}
+
+	end := bytes.Index(buf.Bytes()[start:], PROTOCOL_SEPARATOR)
+	if end == -1 {
+		return 0, errIncompleteData
+	}
+
+	length, err := strconv.Atoi(string(buf.Bytes()[start+1 : start+end]))
+	if err != nil {
+		return 0, err
+	}
+
+	consumed := end + len(PROTOCOL_SEPARATOR)
+
+	if length == -1 {
+		// Null bulk string
+		bs.Value = nil
+		return consumed, nil
+	}
+
+	if start+consumed+length+len(PROTOCOL_SEPARATOR) > buf.Len() {
+		return 0, errIncompleteData
+	}
+
+	bs.Value = make([]byte, length)
+	copy(bs.Value, buf.Bytes()[start+consumed:start+consumed+length])
+
+	return consumed + length + len(PROTOCOL_SEPARATOR), nil
+}

@@ -52,3 +52,40 @@ func (a *RESPArray) Encode(buf *bytes.Buffer) error {
 	}
 	return nil
 }
+
+func (a *RESPArray) Decode(buf *bytes.Buffer, start int) (int, error) {
+	if start >= buf.Len() || buf.Bytes()[start] != byte(ARRAY) {
+		return 0, errUnrecoverableProtocol
+	}
+
+	end := bytes.Index(buf.Bytes()[start:], PROTOCOL_SEPARATOR)
+	if end == -1 {
+		return 0, errIncompleteData
+	}
+
+	count, err := strconv.Atoi(string(buf.Bytes()[start+1 : start+end]))
+	if err != nil {
+		return 0, err
+	}
+
+	consumed := end + len(PROTOCOL_SEPARATOR)
+
+	if count == -1 {
+		// Null array
+		a.Items = nil
+		return consumed, nil
+	}
+
+	a.Items = make([]RESPValue, 0, count)
+
+	for i := 0; i < count; i++ {
+		value, n, err := DecodeValue(buf, start+consumed)
+		if err != nil {
+			return 0, err
+		}
+		a.Items = append(a.Items, value)
+		consumed += n
+	}
+
+	return consumed, nil
+}
